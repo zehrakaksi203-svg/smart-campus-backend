@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
-console.log("Department Routes yüklendi.");
+
+const auth = require("../middleware/auth");
+const role = require("../middleware/role");
+
 const {
   createDepartment,
   getAllDepartments,
@@ -9,19 +12,19 @@ const {
   deleteDepartment
 } = require("../controllers/departmentController");
 
-// Yeni bölüm oluştur
-router.post("/", createDepartment);
+// Yeni bölüm oluştur (Sadece Admin)
+router.post("/", auth, role("Admin"), createDepartment);
 
-// Tüm bölümleri getir
-router.get("/", getAllDepartments);
+// Tüm bölümleri getir (Giriş yapan herkes)
+router.get("/", auth, getAllDepartments);
 
-// ID ile bölüm getir
-router.get("/:id", getDepartmentById);
+// ID ile bölüm getir (Giriş yapan herkes)
+router.get("/:id", auth, getDepartmentById);
 
-// Bölüm güncelle
-router.put("/:id", updateDepartment);
+// Bölüm güncelle (Sadece Admin)
+router.put("/:id", auth, role("Admin"), updateDepartment);
 
-// Bölüm sil
-router.delete("/:id", deleteDepartment);
+// Bölüm sil (Sadece Admin)
+router.delete("/:id", auth, role("Admin"), deleteDepartment);
 
 module.exports = router;

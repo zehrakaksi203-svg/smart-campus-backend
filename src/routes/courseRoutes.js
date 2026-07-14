@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
+const auth = require("../middleware/auth");
+const role = require("../middleware/role");
+
 const {
   createCourse,
   getAllCourses,
@@ -9,19 +12,19 @@ const {
   deleteCourse
 } = require("../controllers/courseController");
 
-// Yeni ders oluştur
-router.post("/", createCourse);
+// Yeni ders oluştur (Admin ve Faculty)
+router.post("/", auth, role("Admin", "Faculty"), createCourse);
 
-// Tüm dersleri getir
-router.get("/", getAllCourses);
+// Tüm dersleri getir (Giriş yapan herkes)
+router.get("/", auth, getAllCourses);
 
-// ID ile ders getir
-router.get("/:id", getCourseById);
+// ID ile ders getir (Giriş yapan herkes)
+router.get("/:id", auth, getCourseById);
 
-// Ders güncelle
-router.put("/:id", updateCourse);
+// Ders güncelle (Admin ve Faculty)
+router.put("/:id", auth, role("Admin", "Faculty"), updateCourse);
 
-// Ders sil
-router.delete("/:id", deleteCourse);
+// Ders sil (Sadece Admin)
+router.delete("/:id", auth, role("Admin"), deleteCourse);
 
 module.exports = router;
