@@ -1,0 +1,11 @@
+[35msrc/routes/announcementRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mannouncementController");
+[35msrc/routes/attendanceRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mattendanceController");
+[35msrc/routes/authRoutes.js[m[36m:[mconst { register, login } = require("../[1;31mcontrollers/[mauthController");
+[35msrc/routes/courseRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mcourseController");
+[35msrc/routes/departmentRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mdepartmentController");
+[35msrc/routes/enrollmentRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[menrollmentController");
+[35msrc/routes/examRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mexamController");
+[35msrc/routes/facultyRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mfacultyController");
+[35msrc/routes/gradeRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mgradeController");
+[35msrc/routes/studentRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[mstudentController");
+[35msrc/routes/userRoutes.js[m[36m:[m} = require("../[1;31mcontrollers/[muserController");
