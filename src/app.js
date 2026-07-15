@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const path = require("path");
 const sequelize = require("./config/database");
+const errorHandler = require("./middleware/errorHandler");
 
 dotenv.config();
 
@@ -58,6 +59,12 @@ app.use("/api/announcements", announcementRoutes);
 app.get("/", (req, res) => {
   res.send("Smart Campus Backend API is running!");
 });
+
+// =========================
+// Global Error Handler
+// =========================
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 

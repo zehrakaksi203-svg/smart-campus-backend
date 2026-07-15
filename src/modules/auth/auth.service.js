@@ -78,9 +78,7 @@ const login = async ({ email, password }) => {
   await RefreshToken.create({
     userId: user.id,
     token: refreshToken,
-    expiresAt: new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000
-    )
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   });
 
   return {
@@ -111,7 +109,10 @@ const refresh = async ({ refreshToken }) => {
       process.env.REFRESH_TOKEN_SECRET,
       (err, payload) => {
         if (err) {
-          reject({ status: 403, message: "Refresh token süresi dolmuş." });
+          reject({
+            status: 403,
+            message: "Refresh token süresi dolmuş."
+          });
           return;
         }
 
@@ -184,9 +185,7 @@ const forgotPassword = async ({ email }) => {
   await PasswordResetToken.create({
     userId: user.id,
     token: resetToken,
-    expiresAt: new Date(
-      Date.now() + 15 * 60 * 1000
-    )
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000)
   });
 
   console.log("Şifre sıfırlama token:", resetToken);
@@ -197,10 +196,67 @@ const forgotPassword = async ({ email }) => {
   };
 };
 
+// =========================
+// RESET PASSWORD
+// =========================
+
+const resetPassword = async ({ token, newPassword }) => {
+  if (!token || !newPassword) {
+    throw {
+      status: 400,
+      message: "Token ve yeni şifre zorunludur."
+    };
+  }
+
+  let decoded;
+
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    throw {
+      status: 400,
+      message: "Geçersiz veya süresi dolmuş token."
+    };
+  }
+
+  const savedToken = await PasswordResetToken.findOne({
+    where: {
+      token
+    }
+  });
+
+  if (!savedToken) {
+    throw {
+      status: 400,
+      message: "Token bulunamadı."
+    };
+  }
+
+  const user = await User.findByPk(decoded.id);
+
+  if (!user) {
+    throw {
+      status: 404,
+      message: "Kullanıcı bulunamadı."
+    };
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+
+  await user.save();
+
+  await savedToken.destroy();
+
+  return {
+    message: "Şifre başarıyla güncellendi."
+  };
+};
+
 module.exports = {
   register,
   login,
   refresh,
   logout,
-  forgotPassword
+  forgotPassword,
+  resetPassword
 };

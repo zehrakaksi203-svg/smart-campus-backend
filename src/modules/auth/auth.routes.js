@@ -6,17 +6,37 @@ const {
   login,
   refresh,
   logout,
-  forgotPassword
+  forgotPassword,
+  resetPassword
 } = require("./auth.controller");
 
-router.post("/register", register);
+const validate = require("../../middleware/validate");
 
-router.post("/login", login);
+const {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema
+} = require("./auth.validation");
+
+router.post("/register", validate(registerSchema), register);
+
+router.post("/login", validate(loginSchema), login);
 
 router.post("/refresh", refresh);
 
 router.post("/logout", logout);
 
-router.post("/forgot-password", forgotPassword);
+router.post(
+  "/forgot-password",
+  validate(forgotPasswordSchema),
+  forgotPassword
+);
+
+router.post(
+  "/reset-password",
+  validate(resetPasswordSchema),
+  resetPassword
+);
 
 module.exports = router;
