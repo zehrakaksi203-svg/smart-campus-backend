@@ -49,6 +49,19 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false
       },
 
+      // Email doğrulandı mı?
+      isVerified: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+
+      // Email doğrulama tokenı
+      verificationToken: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
+
       profilePicture: {
         type: DataTypes.STRING
       }

@@ -1,5 +1,4 @@
 const userService = require("./user.service");
-
 const handleError = (res, error) => {
   console.error(error);
 
@@ -43,6 +42,24 @@ const uploadProfilePicture = async (req, res) => {
     handleError(res, error);
   }
 };
+const getAllUsers = async (req, res) => {
+  try {
+    const { page, limit, role, department, search } = req.query;
+    const result = await userService.getAllUsers({
+      page,
+      limit,
+      role,
+      department,
+      search
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+
+
 
 const createStudent = async (req, res) => {
   try {
@@ -138,6 +155,7 @@ module.exports = {
   getMe,
   updateMe,
   uploadProfilePicture,
+  getAllUsers,
   createStudent,
   getAllStudents,
   getStudentById,

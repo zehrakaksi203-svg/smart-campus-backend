@@ -1,10 +1,21 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User, RefreshToken, PasswordResetToken } = require("../../../models");
+const crypto = require("crypto");
+
+const {
+  User,
+  RefreshToken,
+  PasswordResetToken
+} = require("../../../models");
+
+const { sendVerificationEmail } = require("./mail.service");
 
 const register = async ({ fullName, email, password, role }) => {
   if (!fullName || !email || !password || !role) {
-    throw { status: 400, message: "Tüm alanlar zorunludur." };
+    throw {
+      status: 400,
+      message: "Tüm alanlar zorunludur."
+    };
   }
 
   const existingUser = await User.findOne({
@@ -12,25 +23,35 @@ const register = async ({ fullName, email, password, role }) => {
   });
 
   if (existingUser) {
-    throw { status: 400, message: "Bu e-posta zaten kayıtlı." };
+    throw {
+      status: 400,
+      message: "Bu e-posta zaten kayıtlı."
+    };
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
+
+  const verificationToken = crypto.randomBytes(32).toString("hex");
 
   const user = await User.create({
     fullName,
     email,
     password: hashedPassword,
-    role
+    role,
+    isVerified: false,
+    verificationToken
   });
 
+  await sendVerificationEmail(email, verificationToken);
+
   return {
-    message: "Kullanıcı başarıyla oluşturuldu.",
+    message: "Kullanıcı oluşturuldu. Lütfen e-posta adresinizi doğrulayın.",
     user: {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
-      role: user.role
+      role: user.role,
+      isVerified: user.isVerified
     }
   };
 };
@@ -46,6 +67,13 @@ const login = async ({ email, password }) => {
 
   if (!user) {
     throw { status: 404, message: "Kullanıcı bulunamadı." };
+  }
+
+  if (!user.isVerified) {
+    throw {
+      status: 403,
+     message: "Lütfen önce e-posta adresinizi doğrulayın."
+    };
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -251,6 +279,36 @@ const resetPassword = async ({ token, newPassword }) => {
     message: "Şifre başarıyla güncellendi."
   };
 };
+const verifyEmail = async (token) => {
+  if (!token) {
+    throw {
+      status: 400,
+      message: "Doğrulama tokenı gerekli."
+    };
+  }
+
+  const user = await User.findOne({
+    where: {
+      verificationToken: token
+    }
+  });
+
+  if (!user) {
+    throw {
+      status: 400,
+      message: "Geçersiz doğrulama tokenı."
+    };
+  }
+
+  user.isVerified = true;
+  user.verificationToken = null;
+
+  await user.save();
+
+  return {
+    message: "E-posta başarıyla doğrulandı."
+  };
+};
 
 module.exports = {
   register,
@@ -258,5 +316,6 @@ module.exports = {
   refresh,
   logout,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyEmail
 };

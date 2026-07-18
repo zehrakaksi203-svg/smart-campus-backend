@@ -1,7 +1,10 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const path = require("path");
-const sequelize = require("./config/database");
+
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+
 const errorHandler = require("./middleware/errorHandler");
 
 dotenv.config();
@@ -9,14 +12,72 @@ dotenv.config();
 const app = express();
 
 // =========================
-// Module Routes
+// Swagger Configuration
+// =========================
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Smart Campus API",
+      version: "1.0.0",
+      description: "Smart Campus Backend API Documentation"
+    },
+    servers: [
+      {
+        url: "http://localhost:3000"
+      }
+    ],
+
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT"
+        }
+      }
+    },
+
+    security: [
+      {
+        bearerAuth: []
+      }
+    ]
+  },
+
+  apis: ["./src/modules/**/*.js"]
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec)
+);
+
+// =========================
+// Middlewares
+// =========================
+
+app.use(express.json());
+
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
+
+// =========================
+// Routes
 // =========================
 
 const authRoutes = require("./modules/auth/auth.routes");
-
+const courseSectionRoutes = require("./modules/courseSections/courseSection.routes");
 const userRoutes = require("./modules/users/user.routes");
-const studentRoutes = require("./modules/users/user.routes").studentRouter;
-const facultyRoutes = require("./modules/users/user.routes").facultyRouter;
+const studentRoutes =
+  require("./modules/users/user.routes").studentRouter;
+const facultyRoutes =
+  require("./modules/users/user.routes").facultyRouter;
 
 const departmentRoutes = require("./modules/departments/department.routes");
 const courseRoutes = require("./modules/courses/course.routes");
@@ -26,32 +87,20 @@ const attendanceRoutes = require("./modules/attendance/attendance.routes");
 const examRoutes = require("./modules/exams/exam.routes");
 const announcementRoutes = require("./modules/announcements/announcement.routes");
 
-// =========================
-// Middleware
-// =========================
+app.use("/api/v1/auth", authRoutes);
 
-app.use(express.json());
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/students", studentRoutes);
+app.use("/api/v1/faculties", facultyRoutes);
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// =========================
-// API Routes
-// =========================
-
-app.use("/api/auth", authRoutes);
-
-app.use("/api/users", userRoutes);
-app.use("/api/students", studentRoutes);
-app.use("/api/faculties", facultyRoutes);
-
-app.use("/api/departments", departmentRoutes);
-app.use("/api/courses", courseRoutes);
-app.use("/api/enrollments", enrollmentRoutes);
-app.use("/api/grades", gradeRoutes);
-app.use("/api/attendances", attendanceRoutes);
-app.use("/api/exams", examRoutes);
-app.use("/api/announcements", announcementRoutes);
-
+app.use("/api/v1/departments", departmentRoutes);
+app.use("/api/v1/courses", courseRoutes);
+app.use("/api/v1/enrollments", enrollmentRoutes);
+app.use("/api/v1/grades", gradeRoutes);
+app.use("/api/v1/attendances", attendanceRoutes);
+app.use("/api/v1/exams", examRoutes);
+app.use("/api/v1/announcements", announcementRoutes);
+app.use("/api/course-sections", courseSectionRoutes);
 // =========================
 // Home
 // =========================
@@ -66,21 +115,4 @@ app.get("/", (req, res) => {
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-
-// =========================
-// Database Connection
-// =========================
-
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log("✅ PostgreSQL bağlantısı başarılı.");
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Server ${PORT} portunda çalışıyor.`);
-    });
-  })
-  .catch((err) => {
-    console.error("❌ Veritabanı bağlantı hatası:", err.message);
-  });
+module.exports = app;

@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const { User, Student, Faculty, Department } = require("../../../models");
 
 const getMe = async (userId) => {
@@ -61,6 +62,63 @@ const uploadProfilePicture = async (userId, filename) => {
     profilePicture: filename
   };
 };
+
+const getAllUsers = async ({ page = 1, limit = 10, role, department, search }) => {
+  const currentPage = Number(page) || 1;
+  const pageSize = Number(limit) || 10;
+  const offset = (currentPage - 1) * pageSize;
+
+  const where = {};
+
+  if (role) {
+    where.role = role;
+  }
+
+  if (search) {
+    where[Op.or] = [
+      { fullName: { [Op.iLike]: `%${search}%` } },
+      { email: { [Op.iLike]: `%${search}%` } }
+    ];
+  }
+
+  if (department) {
+    const [students, faculties] = await Promise.all([
+      Student.findAll({
+        where: { departmentId: department },
+        attributes: ["userId"]
+      }),
+      Faculty.findAll({
+        where: { departmentId: department },
+        attributes: ["userId"]
+      })
+    ]);
+
+    const userIds = [
+      ...students.map((s) => s.userId),
+      ...faculties.map((f) => f.userId)
+    ];
+
+    where.id = { [Op.in]: userIds.length ? userIds : [-1] };
+  }
+
+  const { count, rows } = await User.findAndCountAll({
+    where,
+    attributes: { exclude: ["password"] },
+    limit: pageSize,
+    offset,
+    order: [["createdAt", "DESC"]]
+  });
+
+  return {
+    total: count,
+    page: currentPage,
+    limit: pageSize,
+    totalPages: Math.ceil(count / pageSize),
+    users: rows
+  };
+};
+
+
 
 const createStudent = async (data) => {
   const student = await Student.create(data);
@@ -196,6 +254,7 @@ module.exports = {
   getMe,
   updateMe,
   uploadProfilePicture,
+  getAllUsers,
   createStudent,
   getAllStudents,
   getStudentById,

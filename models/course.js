@@ -22,16 +22,16 @@ module.exports = (sequelize, DataTypes) => {
     foreignKey: "courseId",
     as: "enrollments"
   });
-
+// Course -> CourseSection
+Course.hasMany(models.CourseSection, {
+  foreignKey: "courseId",
+  as: "sections"
+});
    // Course -> Exam
 Course.hasMany(models.Exam, {
   foreignKey: "courseId",
   as: "exams"
 });
-
-
-
-
     }
   }
 
