@@ -32,6 +32,18 @@ Course.hasMany(models.Exam, {
   foreignKey: "courseId",
   as: "exams"
 });
+
+// Course -> CoursePrerequisite (bu dersin önkoşulları)
+Course.hasMany(models.CoursePrerequisite, {
+  foreignKey: "courseId",
+  as: "prerequisites"
+});
+
+// Course -> CoursePrerequisite (bu dersin önkoşul olduğu dersler)
+Course.hasMany(models.CoursePrerequisite, {
+  foreignKey: "prerequisiteCourseId",
+  as: "requiredFor"
+});
     }
   }
 

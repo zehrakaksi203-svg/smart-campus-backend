@@ -27,6 +27,23 @@ module.exports = (sequelize, DataTypes) => {
        as: "announcements"
       });
 
+      // Faculty -> CourseSection
+      Faculty.hasMany(models.CourseSection, {
+        foreignKey: "facultyId",
+        as: "sections"
+      });
+
+      // Faculty -> AttendanceSession
+      Faculty.hasMany(models.AttendanceSession, {
+        foreignKey: "facultyId",
+        as: "attendanceSessions"
+      });
+
+      // Faculty -> ExcuseRequest (inceleyen olarak)
+      Faculty.hasMany(models.ExcuseRequest, {
+        foreignKey: "reviewedBy",
+        as: "reviewedExcuseRequests"
+      });
 
     }
   }

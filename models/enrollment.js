@@ -16,17 +16,24 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "courseId",
         as: "course"
       });
+
+      // Enrollment -> CourseSection
+      Enrollment.belongsTo(models.CourseSection, {
+        foreignKey: "sectionId",
+        as: "section"
+      });
+
       // Enrollment -> Grade
       Enrollment.hasOne(models.Grade, {
         foreignKey: "enrollmentId",
-      as: "grade"
+        as: "grade"
       });
-      // Enrollment -> Attendance
-  Enrollment.hasMany(models.Attendance, {
-    foreignKey: "enrollmentId",
-    as: "attendances"
-  });
 
+      // Enrollment -> Attendance
+      Enrollment.hasMany(models.Attendance, {
+        foreignKey: "enrollmentId",
+        as: "attendances"
+      });
 
     }
   }
@@ -41,6 +48,36 @@ module.exports = (sequelize, DataTypes) => {
       courseId: {
         type: DataTypes.INTEGER,
         allowNull: false
+      },
+
+      sectionId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+
+      enrollmentDate: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+
+      midtermGrade: {
+        type: DataTypes.FLOAT,
+        allowNull: true
+      },
+
+      finalGrade: {
+        type: DataTypes.FLOAT,
+        allowNull: true
+      },
+
+      letterGrade: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+
+      gradePoint: {
+        type: DataTypes.FLOAT,
+        allowNull: true
       },
 
       semester: {

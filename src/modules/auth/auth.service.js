@@ -69,12 +69,12 @@ const login = async ({ email, password }) => {
     throw { status: 404, message: "Kullanıcı bulunamadı." };
   }
 
-  if (!user.isVerified) {
+ if (!user.isVerified) {
     throw {
-      status: 403,
+     status: 403,
      message: "Lütfen önce e-posta adresinizi doğrulayın."
     };
-  }
+ }
 
   const isMatch = await bcrypt.compare(password, user.password);
 
