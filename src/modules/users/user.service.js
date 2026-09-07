@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const { User, Student, Faculty, Department } = require("../../../models");
-
+const crypto = require("crypto");
 const getMe = async (userId) => {
   const user = await User.findByPk(userId, {
     attributes: {
@@ -12,10 +12,29 @@ const getMe = async (userId) => {
     throw { status: 404, message: "Kullanıcı bulunamadı." };
   }
 
-  return user;
-};
+  const userData = user.toJSON();
 
-const updateMe = async (userId, { fullName, email }) => {
+  if (user.role === "Student") {
+    const student = await Student.findOne({
+      where: { userId },
+      include: [{ model: Department, as: "department", attributes: ["id", "name", "code"] }]
+    });
+    userData.studentProfile = student;
+  }
+
+  if (user.role === "Faculty") {
+    const faculty = await Faculty.findOne({
+      where: { userId },
+      include: [{ model: Department, as: "department", attributes: ["id", "name", "code"] }]
+    });
+    userData.facultyProfile = faculty;
+  }
+
+  return userData;
+};
+const updateMe = async (userId, data = {}) => {
+  const { fullName, email } = data;
+
   const user = await User.findByPk(userId);
 
   if (!user) {
@@ -118,16 +137,19 @@ const getAllUsers = async ({ page = 1, limit = 10, role, department, search }) =
   };
 };
 
-
-
 const createStudent = async (data) => {
-  const student = await Student.create(data);
+  const student = await Student.create({
+    ...data,
+    studentNumber: crypto.randomUUID()
+  });
 
   return {
     message: "Öğrenci başarıyla oluşturuldu.",
     student
   };
 };
+
+
 
 const getAllStudents = async () => {
   return Student.findAll({

@@ -10,13 +10,15 @@ const {
 
 const { sendVerificationEmail } = require("./mail.service");
 
-const register = async ({ fullName, email, password, role }) => {
-  if (!fullName || !email || !password || !role) {
+const register = async ({ fullName, email, password }) => {
+  if (!fullName || !email || !password) {
     throw {
       status: 400,
       message: "Tüm alanlar zorunludur."
     };
   }
+
+  const role = "Student";
 
   const existingUser = await User.findOne({
     where: { email }
@@ -55,8 +57,9 @@ const register = async ({ fullName, email, password, role }) => {
     }
   };
 };
-
 const login = async ({ email, password }) => {
+  console.log("EMAIL:", email);
+
   if (!email || !password) {
     throw { status: 400, message: "E-posta ve şifre zorunludur." };
   }
@@ -68,6 +71,7 @@ const login = async ({ email, password }) => {
   if (!user) {
     throw { status: 404, message: "Kullanıcı bulunamadı." };
   }
+
 
  if (!user.isVerified) {
     throw {
@@ -286,6 +290,13 @@ const verifyEmail = async (token) => {
       message: "Doğrulama tokenı gerekli."
     };
   }
+  
+
+
+
+
+
+
 
   const user = await User.findOne({
     where: {

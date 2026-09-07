@@ -59,10 +59,58 @@ const deleteGrade = async (req, res) => {
   }
 };
 
+// ==========================================
+// PART 2: YENİ EKLENEN METOTLAR
+// ==========================================
+
+const getMyGrades = async (req, res) => {
+  try {
+    const grades = await gradeService.getMyGrades(req.user.id);
+    res.status(200).json(grades);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getTranscript = async (req, res) => {
+  try {
+    const transcriptData = await gradeService.getTranscript(req.user.id);
+    res.status(200).json(transcriptData);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getTranscriptPdf = async (req, res) => {
+  try {
+    const doc = await gradeService.generateTranscriptPdf(req.user.id);
+
+    res.setHeader("Content-disposition", `attachment; filename="Transkript.pdf"`);
+    res.setHeader("Content-type", "application/pdf");
+
+    doc.pipe(res);
+    doc.end();
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+const notifySectionGrades = async (req, res) => {
+  try {
+    const result = await gradeService.notifySectionGrades(req.params.sectionId);
+    res.status(200).json(result);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 module.exports = {
   createGrade,
   getAllGrades,
   getGradeById,
   updateGrade,
-  deleteGrade
+  deleteGrade,
+  getMyGrades,
+  getTranscript,
+  getTranscriptPdf,
+  notifySectionGrades
 };

@@ -69,12 +69,12 @@ router.get("/:id", auth, getCourseSectionById);
  * @swagger
  * /api/course-sections/{id}:
  *   put:
- *     summary: Ders şubesini güncelle
+ *     summary: Ders şubesini güncelle (gün/saat/derslik dahil)
  *     tags: [Course Sections]
  *     security:
  *       - bearerAuth: []
  */
-router.put("/:id", auth, role("Admin"), updateCourseSection);
+router.put("/:id", auth, role("Admin", "Faculty"), updateCourseSection);
 
 /**
  * @swagger

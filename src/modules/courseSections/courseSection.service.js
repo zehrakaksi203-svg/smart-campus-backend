@@ -1,4 +1,4 @@
-const { CourseSection, Course, Faculty } = require("../../../models");
+const { CourseSection, Course, Faculty, User } = require("../../../models");
 
 const createCourseSection = async (data) => {
   const section = await CourseSection.create(data);
@@ -18,7 +18,14 @@ const getAllCourseSections = async () => {
       },
       {
         model: Faculty,
-        as: "faculty"
+        as: "faculty",
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "fullName", "email"]
+          }
+        ]
       }
     ]
   });
@@ -33,7 +40,14 @@ const getCourseSectionById = async (id) => {
       },
       {
         model: Faculty,
-        as: "faculty"
+        as: "faculty",
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "fullName", "email"]
+          }
+        ]
       }
     ]
   });

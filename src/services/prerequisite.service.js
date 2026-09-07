@@ -7,7 +7,7 @@ const { CoursePrerequisite, Enrollment, CourseSection } = require("../../models"
  * bir Enrollment kaydının varlığı anlamına gelir.
  */
 const hasCompletedCourse = async (studentId, courseId) => {
-  const failingGrades = ["FF", "F", "DD", "DC"];
+  const failingGrades = ["FF", "FD"];
 
   const completedEnrollment = await Enrollment.findOne({
     where: { studentId },

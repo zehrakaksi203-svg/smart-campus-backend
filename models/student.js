@@ -9,7 +9,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "userId",
         as: "user"
       });
-
+      // Student -> Wallet
+      Student.hasOne(models.Wallet, {
+      foreignKey: "studentId",
+      as: "wallet"
+      });
       // Student -> Department
       Student.belongsTo(models.Department, {
         foreignKey: "departmentId",
@@ -32,6 +36,18 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "studentId",
         as: "excuseRequests"
       });
+      // Student -> MealReservation
+      Student.hasMany(models.MealReservation, {
+      foreignKey: "studentId",
+      as: "mealReservations"
+      });
+
+          // Student -> EventRegistration
+          Student.hasMany(models.EventRegistration, {
+            foreignKey: "studentId",
+            as: "eventRegistrations"
+            });
+
     }
   }
 

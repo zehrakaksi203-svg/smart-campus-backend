@@ -9,7 +9,9 @@ const {
   getAllEnrollments,
   getEnrollmentById,
   updateEnrollment,
-  deleteEnrollment
+  deleteEnrollment,
+  getMyEnrollments,       // <-- Eklenen controller metodu
+  getStudentsBySection    // <-- Eklenen controller metodu
 } = require("./enrollment.controller");
 
 /**
@@ -21,9 +23,43 @@ const {
 
 /**
  * @swagger
+ * /api/v1/enrollments/my-courses:
+ *   get:
+ *     summary: Öğrencinin kendi kayıtlı derslerini getir
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Kayıtlı ders listesi
+ */
+router.get("/my-courses", auth, role("Student"), getMyEnrollments);
+
+/**
+ * @swagger
+ * /api/v1/enrollments/students/{sectionId}:
+ *   get:
+ *     summary: Bir şubeye (section) kayıtlı öğrencileri listele
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sectionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Öğrenci listesi
+ */
+router.get("/students/:sectionId", auth, role("Faculty", "Admin"), getStudentsBySection);
+
+/**
+ * @swagger
  * /api/v1/enrollments:
  *   post:
- *     summary: Yeni ders kaydı oluştur
+ *     summary: Yeni ders kaydı oluştur (Önkoşul & Çakışma Kontrollü)
  *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
@@ -37,7 +73,7 @@ const {
  *               studentId:
  *                 type: integer
  *                 example: 1
- *               courseId:
+ *               sectionId:
  *                 type: integer
  *                 example: 1
  *               semester:
@@ -53,7 +89,7 @@ const {
  *       201:
  *         description: Ders kaydı oluşturuldu
  *       400:
- *         description: Geçersiz istek
+ *         description: Geçersiz istek (Önkoşul veya çakışma hatası)
  *       401:
  *         description: Yetkisiz erişim
  */
@@ -73,7 +109,7 @@ router.post("/", auth, role("Admin", "Student"), createEnrollment);
  *       401:
  *         description: Yetkisiz erişim
  */
-router.get("/", auth, getAllEnrollments);
+router.get("/", auth, role("Admin", "Faculty"), getAllEnrollments);
 
 /**
  * @swagger
@@ -136,7 +172,7 @@ router.put("/:id", auth, role("Admin"), updateEnrollment);
  * @swagger
  * /api/v1/enrollments/{id}:
  *   delete:
- *     summary: Ders kaydını sil
+ *     summary: Ders kaydını sil / dersten çekil (Drop)
  *     tags: [Enrollments]
  *     security:
  *       - bearerAuth: []
@@ -152,6 +188,6 @@ router.put("/:id", auth, role("Admin"), updateEnrollment);
  *       404:
  *         description: Ders kaydı bulunamadı
  */
-router.delete("/:id", auth, role("Admin"), deleteEnrollment);
+router.delete("/:id", auth, role("Admin", "Student"), deleteEnrollment);
 
 module.exports = router;

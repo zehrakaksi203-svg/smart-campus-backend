@@ -163,6 +163,6 @@ router.put("/:id", auth, role("Admin", "Faculty"), updateAnnouncement);
  *       404:
  *         description: Duyuru bulunamadı
  */
-router.delete("/:id", auth, role("Admin"), deleteAnnouncement);
+router.delete("/:id", auth, role("Admin", "Faculty"), deleteAnnouncement);
 
 module.exports = router;

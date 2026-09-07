@@ -12,11 +12,7 @@ const registerSchema = Joi.object({
     .messages({
       "string.pattern.base":
         "Şifre en az 8 karakter olmalı, en az 1 büyük harf ve 1 rakam içermelidir."
-    }),
-
-  role: Joi.string()
-    .valid("Student", "Faculty", "Admin")
-    .required()
+    })
 });
 
 const loginSchema = Joi.object({

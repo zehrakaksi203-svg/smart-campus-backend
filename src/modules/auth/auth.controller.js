@@ -6,8 +6,9 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema
 } = require("./auth.validation");
-
 const register = async (req, res) => {
+  console.log("=== REGISTER CONTROLLER ===");
+  console.log(req.body);
 
   const { error } = registerSchema.validate(req.body);
 
@@ -19,7 +20,8 @@ const register = async (req, res) => {
 
   try {
     const result = await authService.register(req.body);
-    res.status(201).json(result);
+    console.log("REGISTER BİTTİ");
+    return res.status(201).json(result);
   } catch (error) {
     console.error(error);
 
@@ -29,7 +31,7 @@ const register = async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       message: error.message
     });
   }

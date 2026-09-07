@@ -9,15 +9,71 @@ const {
   getAllGrades,
   getGradeById,
   updateGrade,
-  deleteGrade
+  deleteGrade,
+  getMyGrades,
+  getTranscript,
+  getTranscriptPdf,
+  notifySectionGrades   // <-- Eklenen metot
 } = require("./grade.controller");
-
 /**
  * @swagger
  * tags:
  *   name: Grades
  *   description: Not yönetimi API'si
  */
+
+/**
+ * @swagger
+ * /api/v1/grades/my-grades:
+ *   get:
+ *     summary: Öğrencinin kendi notlarını listele
+ *     tags: [Grades]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Öğrencinin not listesi
+ *       401:
+ *         description: Yetkisiz erişim
+ */
+router.get("/my-grades", auth, role("Student"), getMyGrades);
+
+/**
+ * @swagger
+ * /api/v1/grades/transcript:
+ *   get:
+ *     summary: Öğrencinin transkript verisini JSON olarak al
+ *     tags: [Grades]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Transkript detayları ve CGPA
+ *       401:
+ *         description: Yetkisiz erişim
+ */
+router.get("/transcript", auth, role("Student"), getTranscript);
+
+/**
+ * @swagger
+ * /api/v1/grades/transcript/pdf:
+ *   get:
+ *     summary: Resmi transkript belgesini PDF olarak indir
+ *     tags: [Grades]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Transkript PDF dosyası
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       401:
+ *         description: Yetkisiz erişim
+ */
+router.get("/transcript/pdf", auth, role("Student"), getTranscriptPdf);
 
 /**
  * @swagger
@@ -78,7 +134,7 @@ router.post("/", auth, role("Admin", "Faculty"), createGrade);
  *       401:
  *         description: Yetkisiz erişim
  */
-router.get("/", auth, getAllGrades);
+router.get("/", auth, role("Admin", "Faculty"), getAllGrades);
 
 /**
  * @swagger
@@ -163,6 +219,29 @@ router.put("/:id", auth, role("Admin", "Faculty"), updateGrade);
  *       404:
  *         description: Not kaydı bulunamadı
  */
+
+
+/**
+ * @swagger
+ * /api/v1/grades/notify-section/{sectionId}:
+ *   post:
+ *     summary: Bir section'daki notu girilmiş tüm öğrencilere toplu bildirim gönder
+ *     tags: [Grades]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sectionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Bildirimler gönderildi
+ *       401:
+ *         description: Yetkisiz erişim
+ */
+router.post("/notify-section/:sectionId", auth, role("Admin", "Faculty"), notifySectionGrades);
 router.delete("/:id", auth, role("Admin"), deleteGrade);
 
 module.exports = router;

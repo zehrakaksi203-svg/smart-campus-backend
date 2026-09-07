@@ -7,7 +7,7 @@ const {
   Department,
   Faculty
 } = require("../../../models");
-   
+
 const { sequelize } = require("../../../models");
 
 const {
@@ -17,7 +17,6 @@ const {
 const {
   hasScheduleConflict
 } = require("../../services/scheduleConflict.service");
-
 
 const enrollmentIncludes = [
   {
@@ -48,6 +47,13 @@ const enrollmentIncludes = [
           "employeeNumber",
           "title",
           "specialization"
+        ],
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "fullName", "email"]
+          }
         ]
       },
       {
@@ -60,14 +66,46 @@ const enrollmentIncludes = [
         ]
       }
     ]
+  },
+  {
+    model: CourseSection,
+    as: "section",
+    attributes: [
+      "id",
+      "sectionCode",
+      "classroom",
+      "dayOfWeek",
+      "startTime",
+      "endTime",
+      "capacity",
+      "enrolledCount",
+      "semester"
+    ],
+    include: [
+      {
+        model: Faculty,
+        as: "faculty",
+        attributes: ["id", "employeeNumber", "title"],
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "fullName", "email"]
+          }
+        ]
+      }
+    ]
   }
 ];
+
 const createEnrollment = async (data) => {
   const transaction = await sequelize.transaction();
 
   try {
     // Öğrenci kontrolü
-    const student = await Student.findByPk(data.studentId);
+    const student = await Student.findOne({
+      where: { userId: data.userId }
+    });
 
     if (!student) {
       throw {
@@ -217,17 +255,67 @@ const updateEnrollment = async (id, data) => {
 };
 
 const deleteEnrollment = async (id) => {
-  const enrollment = await Enrollment.findByPk(id);
+  const transaction = await sequelize.transaction();
 
-  if (!enrollment) {
-    throw { status: 404, message: "Kayıt bulunamadı." };
+  try {
+    const enrollment = await Enrollment.findByPk(id, { transaction });
+
+    if (!enrollment) {
+      throw { status: 404, message: "Kayıt bulunamadı." };
+    }
+
+    // Dersten çekilme (Drop) yapıldığında section kontenjanını düşür
+    const section = await CourseSection.findByPk(enrollment.sectionId, { transaction });
+    if (section && section.enrolledCount > 0) {
+      await section.update({ enrolledCount: section.enrolledCount - 1 }, { transaction });
+    }
+
+    await enrollment.destroy({ transaction });
+    await transaction.commit();
+
+    return {
+      message: "Ders kaydı başarıyla silindi ve kontenjan güncellendi."
+    };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+};
+
+// ==========================================
+// PART 2: YENİ EKLENEN METOTLAR
+// ==========================================
+
+/**
+ * Giriş yapan öğrencinin aktif ders kayıtlarını getirir
+ */
+const getMyEnrollments = async (userId) => {
+  const student = await Student.findOne({ where: { userId } });
+
+  if (!student) {
+    throw { status: 404, message: "Öğrenci profili bulunamadı." };
   }
 
-  await enrollment.destroy();
+  return Enrollment.findAll({
+    where: {
+      studentId: student.id,
+      status: "Active"
+    },
+    include: enrollmentIncludes
+  });
+};
 
-  return {
-    message: "Kayıt silindi."
-  };
+/**
+ * Belirli bir section'a (şubeye) kayıtlı öğrencileri getirir (Hoca/Admin için)
+ */
+const getStudentsBySection = async (sectionId) => {
+  return Enrollment.findAll({
+    where: {
+      sectionId,
+      status: "Active"
+    },
+    include: enrollmentIncludes
+  });
 };
 
 module.exports = {
@@ -235,5 +323,7 @@ module.exports = {
   getAllEnrollments,
   getEnrollmentById,
   updateEnrollment,
-  deleteEnrollment
+  deleteEnrollment,
+  getMyEnrollments,
+  getStudentsBySection
 };
