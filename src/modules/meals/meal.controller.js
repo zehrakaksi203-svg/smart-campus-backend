@@ -6,7 +6,8 @@ const {
   createReservation,
   createMeal,
   getAllMeals,
-  getMyReservations
+  getMyReservations,
+  cancelReservation
 } = require('./meal.service');
   
 
@@ -214,6 +215,37 @@ const getMyReservationsController = async (req, res) => {
     });
   }
 };
+const cancelReservationController = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const student = await Student.findOne({
+      where: { userId: req.user.id }
+    });
+
+    if (!student) {
+      return res.status(400).json({
+        success: false,
+        message: 'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
+      });
+    }
+
+    const reservation = await cancelReservation(id, student.id);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Rezervasyon iptal edildi, ücret cüzdana iade edildi.',
+      reservation
+    });
+  } catch (error) {
+    console.error('Rezervasyon iptal hatası:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 
 module.exports = {
   generateQr,
@@ -221,5 +253,6 @@ module.exports = {
   createMealReservation,
   createMealController,
   getAllMealsController,
-  getMyReservationsController
+  getMyReservationsController,
+  cancelReservationController
 };

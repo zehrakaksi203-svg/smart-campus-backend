@@ -1,6 +1,6 @@
 const request = require("supertest");
 const app = require("../src/app");
-const { User, Student, Department, Meal, MealReservation } = require("../models");
+const { User, Student, Department, Meal, MealReservation, Wallet } = require("../models");
 
 // Bu dosya INTEGRATION testtir: gerçek (test) veritabanına bağlanır.
 
@@ -38,6 +38,10 @@ describe("Meal Flow (integration)", () => {
       studentNumber: "MEAL-STU-1",
       classYear: 1,
       gpa: 0
+    });
+    await Wallet.create({
+      studentId: studentRecord.id,
+      balance: 1000
     });
 
     meal = await Meal.create({

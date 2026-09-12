@@ -51,7 +51,8 @@ async function registerForEvent({ studentId, eventId }) {
   const existing = await EventRegistration.findOne({
     where: {
       eventId,
-      studentId
+      studentId,
+      status: ['Registered', 'Waitlisted']
     }
   });
 
@@ -66,18 +67,68 @@ async function registerForEvent({ studentId, eventId }) {
     }
   });
 
-  if (currentCount >= event.capacity) {
-    throw new Error('Etkinlik kontenjanı dolu.');
-  }
+  const isFull = currentCount >= event.capacity;
 
   const registration = await EventRegistration.create({
     eventId,
     studentId,
-    status: 'Registered',
+    status: isFull ? 'Waitlisted' : 'Registered',
     qrUsed: false
   });
 
   return registration;
+}
+
+async function cancelRegistration(registrationId, studentId) {
+  const registration = await EventRegistration.findOne({
+    where: {
+      id: registrationId,
+      studentId
+    }
+  });
+
+  if (!registration) {
+    throw new Error('Kayıt bulunamadı.');
+  }
+
+  if (registration.status === 'Cancelled') {
+    throw new Error('Bu kayıt zaten iptal edilmiş.');
+  }
+
+  const wasRegistered = registration.status === 'Registered';
+  const { eventId } = registration;
+
+  await registration.update({
+    status: 'Cancelled'
+  });
+
+  let promoted = null;
+
+  // Eğer iptal edilen kayıt aktif bir "Registered" kayıtsa, kontenjanda
+  // yer açılmış demektir. Sıradaki en eski "Waitlisted" kaydı otomatik
+  // olarak "Registered" durumuna terfi ettirilir.
+  if (wasRegistered) {
+    const nextInLine = await EventRegistration.findOne({
+      where: {
+        eventId,
+        status: 'Waitlisted'
+      },
+      order: [['createdAt', 'ASC']]
+    });
+
+    if (nextInLine) {
+      await nextInLine.update({
+        status: 'Registered'
+      });
+
+      promoted = nextInLine;
+    }
+  }
+
+  return {
+    registration,
+    promoted
+  };
 }
 
 async function getMyRegistrations(studentId) {
@@ -116,6 +167,9 @@ async function generateRegistrationQr(registrationId, studentId) {
     registrationId: registration.id,
     token
   });
+  console.log("========== EVENT QR DATA ==========");
+console.log(qrData);
+console.log("===================================");
 
   const qrCode = await QRCode.toDataURL(qrData);
 
@@ -184,12 +238,60 @@ async function validateRegistrationQr(qrData) {
   };
 }
 
+function formatDateForICal(date) {
+  return new Date(date)
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .split('.')[0] + 'Z';
+}
+
+function escapeICalText(text) {
+  if (!text) return '';
+
+  return String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+}
+
+async function generateEventICal(eventId) {
+  const event = await Event.findByPk(eventId);
+
+  if (!event) {
+    throw new Error('Etkinlik bulunamadı.');
+  }
+
+  const startDate = formatDateForICal(event.eventDate);
+  const dtstamp = formatDateForICal(new Date());
+
+  const icsLines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//SmartCampus//Events//TR',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:event-${event.id}@smartcampus`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${startDate}`,
+    `SUMMARY:${escapeICalText(event.title)}`,
+    `DESCRIPTION:${escapeICalText(event.description)}`,
+    `LOCATION:${escapeICalText(event.location)}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ];
+
+  return icsLines.join('\r\n');
+}
+
 module.exports = {
   createEvent,
   getAllEvents,
   getEventById,
   registerForEvent,
+  cancelRegistration,
   getMyRegistrations,
   generateRegistrationQr,
-  validateRegistrationQr
+  validateRegistrationQr,
+  generateEventICal
 };

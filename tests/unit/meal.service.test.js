@@ -17,6 +17,12 @@ jest.mock("qrcode", () => ({
       findAll: jest.fn()
     }
   }));
+  jest.mock("../../src/modules/wallet/wallet.service", () => ({
+    debitWallet: jest.fn(),
+    refundWallet: jest.fn()
+  }));
+  
+  const { debitWallet } = require("../../src/modules/wallet/wallet.service");
   
   const QRCode = require("qrcode");
   const { MealReservation, Meal } = require("../../models");
@@ -218,28 +224,30 @@ jest.mock("qrcode", () => ({
           "Bu yemek aktif değil."
         );
       });
-  
       test("aktif yemek için rezervasyon oluşturur", async () => {
-        Meal.findByPk.mockResolvedValue({ id: 1, isActive: true });
+        Meal.findByPk.mockResolvedValue({ id: 1, isActive: true, price: 25, name: "Test Yemek" });
+        debitWallet.mockResolvedValue({});
         MealReservation.create.mockResolvedValue({ id: 10, status: "Reserved" });
-  
+
         const result = await createReservation({ studentId: 1, mealId: 1 });
-  
+
+        expect(debitWallet).toHaveBeenCalledWith(1, 25, expect.any(String));
         expect(MealReservation.create).toHaveBeenCalledWith(
           expect.objectContaining({ studentId: 1, mealId: 1, status: "Reserved", qrUsed: false })
         );
         expect(result.status).toBe("Reserved");
       });
-  
+      
       // NOT: Spec'te istenen "burslu öğrenci günde max 2 öğün" / kota kontrolü
       // bu serviste hiç uygulanmamış - createReservation, Meal.quota alanına
       // veya günlük rezervasyon sayısına hiç bakmıyor. Bu test mevcut (eksik) davranışı belgeliyor.
       test("BİLİNEN EKSİK: kontenjan (quota) dolu olsa bile rezervasyon engellenmiyor", async () => {
-        Meal.findByPk.mockResolvedValue({ id: 1, isActive: true, quota: 0 });
+        Meal.findByPk.mockResolvedValue({ id: 1, isActive: true, quota: 0, price: 25, name: "Test Yemek" });
+        debitWallet.mockResolvedValue({});
         MealReservation.create.mockResolvedValue({ id: 11, status: "Reserved" });
-  
+
         const result = await createReservation({ studentId: 1, mealId: 1 });
-  
+
         expect(result.status).toBe("Reserved");
       });
     });

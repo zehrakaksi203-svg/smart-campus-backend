@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
 const classroomRoutes = require("./modules/classrooms/classroom.routes");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
@@ -15,6 +17,30 @@ const mealRoutes = require("./modules/meals/meal.routes");
 const eventRoutes = require("./modules/events/event.routes");
 const schedulingRoutes = require("./modules/scheduling/scheduling.routes");
 const paymentRoutes = require("./modules/payment/payment.routes");
+const aiRoutes = require("./modules/ai/ai.routes");
+const walletRoutes = require("./modules/wallet/wallet.routes");
+const reservationRoutes = require("./modules/reservations/reservation.routes");
+const analyticsRoutes = require("./modules/analytics/analytics.routes");
+const notificationPreferenceRoutes = require("./modules/notificationsPreference/notification-preference.routes");
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 300,
+  message: { message: "Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test"
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 10,
+  message: { message: "Çok fazla giriş denemesi yaptınız, lütfen 15 dakika sonra tekrar deneyin." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test"
+});
+
 dotenv.config();
 
 const app = express();
@@ -61,6 +87,7 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 console.log(
   JSON.stringify(swaggerSpec.paths["/api/v1/users/me"], null, 2)
 );
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -68,6 +95,8 @@ app.use(
   })
 );
 
+app.use(morgan("dev"));
+app.use("/api/v1", generalLimiter);
 
 app.use(
   "/api-docs",
@@ -121,10 +150,15 @@ const attendanceRoutes = require("./modules/attendance/attendance.routes");
 const examRoutes = require("./modules/exams/exam.routes");
 const announcementRoutes = require("./modules/announcements/announcement.routes");
 const startAbsenceWarningJob = require("./jobs/absenceWarning.job");
+const startEventReminderJob = require("./jobs/eventReminder.job");
+const startMealReminderJob = require("./jobs/mealReminder.job");
+startAbsenceWarningJob();
+startEventReminderJob();
+startMealReminderJob();
 
 // Cron Job'ı başlat
 startAbsenceWarningJob();
-app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", authLimiter, authRoutes);
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/students", studentRoutes);
@@ -147,6 +181,11 @@ app.use("/api/v1/meals", mealRoutes);
 app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/scheduling", schedulingRoutes);
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/ai", aiRoutes);
+app.use("/api/v1/wallet", walletRoutes);
+app.use("/api/v1/reservations", reservationRoutes);
+app.use("/api/v1/analytics", analyticsRoutes);
+app.use("/api/v1/notifications", notificationPreferenceRoutes);
 
 app.get("/test", (req, res) => {
   console.log(">>> TEST ROUTE ÇALIŞTI");

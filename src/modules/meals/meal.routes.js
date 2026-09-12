@@ -12,7 +12,8 @@ const {
   createMealReservation,
   createMealController,
   getAllMealsController,
-  getMyReservationsController
+  getMyReservationsController,
+  cancelReservationController
 } = require('./meal.controller');
 
 /**
@@ -184,5 +185,28 @@ router.post('/', auth, createMealController);
  *         description: Yetkisiz erişim
  */
 router.get('/reservations/my', auth, getMyReservationsController);
-
+/**
+ * @swagger
+ * /api/v1/meals/reservations/{id}:
+ *   delete:
+ *     summary: Yemek rezervasyonunu iptal et (ücret cüzdana iade edilir)
+ *     tags: [Meals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Rezervasyon ID
+ *     responses:
+ *       200:
+ *         description: Rezervasyon iptal edildi ve ücret iade edildi
+ *       400:
+ *         description: Rezervasyon bulunamadı veya iptal edilemez
+ *       401:
+ *         description: Yetkisiz erişim
+ */
+router.delete('/reservations/:id', auth, cancelReservationController);
 module.exports = router;

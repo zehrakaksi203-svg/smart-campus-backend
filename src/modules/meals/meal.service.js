@@ -1,5 +1,5 @@
 'use strict';
-
+const { debitWallet, refundWallet } = require("../wallet/wallet.service");
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 
@@ -112,9 +112,7 @@ async function createMeal(data) {
     return meal;
   }
 
-
-
-async function createReservation({ studentId, mealId }) {
+  async function createReservation({ studentId, mealId }) {
     const meal = await Meal.findByPk(mealId);
   
     if (!meal) {
@@ -124,6 +122,13 @@ async function createReservation({ studentId, mealId }) {
     if (!meal.isActive) {
       throw new Error('Bu yemek aktif değil.');
     }
+
+    // Ücreti cüzdandan düş (bakiye yetersizse debitWallet hata fırlatır)
+    await debitWallet(
+      studentId,
+      meal.price,
+      `Yemek rezervasyonu: ${meal.name}`
+    );
   
     const reservation = await MealReservation.create({
       studentId,
@@ -135,6 +140,7 @@ async function createReservation({ studentId, mealId }) {
   
     return reservation;
   }
+
 
   async function getAllMeals() {
     const meals = await Meal.findAll({
@@ -153,6 +159,30 @@ async function createReservation({ studentId, mealId }) {
   
     return reservations;
   }
+  async function cancelReservation(reservationId, studentId) {
+    const reservation = await MealReservation.findOne({
+      where: { id: reservationId, studentId },
+      include: [{ model: Meal, as: 'meal' }]
+    });
+  
+    if (!reservation) {
+      throw new Error('Rezervasyon bulunamadı.');
+    }
+  
+    if (reservation.status !== 'Reserved') {
+      throw new Error('Bu rezervasyon iptal edilemez.');
+    }
+  
+    await refundWallet(
+      studentId,
+      reservation.meal.price,
+      `İptal iadesi: ${reservation.meal.name}`
+    );
+  
+    await reservation.update({ status: 'Cancelled' });
+  
+    return reservation;
+  }
   
     module.exports = {
       generateReservationQr,
@@ -160,5 +190,6 @@ async function createReservation({ studentId, mealId }) {
       createReservation,
       createMeal,
       getAllMeals,
-      getMyReservations
+      getMyReservations,
+      cancelReservation
     };

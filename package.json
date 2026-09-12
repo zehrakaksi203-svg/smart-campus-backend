@@ -21,12 +21,15 @@
   },
   "homepage": "https://github.com/zehrakaksi203-svg/smart-campus-backend#readme",
   "dependencies": {
+    "axios": "^1.20.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "joi": "^18.2.3",
     "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.12.1",
     "multer": "^2.2.0",
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.3",
@@ -34,9 +37,12 @@
     "pg": "^8.22.0",
     "qrcode": "^1.5.4",
     "sequelize": "^6.37.8",
+    "socket.io": "^4.8.3",
     "stripe": "^22.6.0",
     "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

@@ -10,9 +10,11 @@ const {
   getAllEventsController,
   getEventByIdController,
   registerForEventController,
+  cancelRegistrationController,
   getMyRegistrationsController,
   generateQr,
-  validateQr
+  validateQr,
+  exportEventICalController
 } = require('./event.controller');
 
 /**
@@ -127,6 +129,31 @@ router.get('/:id', auth, getEventByIdController);
 
 /**
  * @swagger
+ * /api/v1/events/{id}/ical:
+ *   get:
+ *     summary: Etkinliği .ics (iCal) dosyası olarak dışa aktar
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Etkinlik ID
+ *     responses:
+ *       200:
+ *         description: .ics dosyası
+ *       400:
+ *         description: Etkinlik bulunamadı
+ *       401:
+ *         description: Yetkisiz erişim
+ */
+router.get('/:id/ical', auth, exportEventICalController);
+
+/**
+ * @swagger
  * /api/v1/events/registrations:
  *   post:
  *     summary: Etkinliğe kayıt ol (Student)
@@ -147,13 +174,38 @@ router.get('/:id', auth, getEventByIdController);
  *                 example: 1
  *     responses:
  *       201:
- *         description: Etkinliğe kayıt oluşturuldu
+ *         description: Etkinliğe kayıt oluşturuldu (veya bekleme listesine eklendi)
  *       400:
  *         description: Kayıt oluşturulamadı
  *       401:
  *         description: Yetkisiz erişim
  */
 router.post('/registrations', auth, registerForEventController);
+
+/**
+ * @swagger
+ * /api/v1/events/registrations/{id}:
+ *   delete:
+ *     summary: Etkinlik kaydını iptal et (Student) - kontenjan açılırsa bekleme listesinden otomatik terfi tetiklenir
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Kayıt ID
+ *     responses:
+ *       200:
+ *         description: Kayıt iptal edildi
+ *       400:
+ *         description: Kayıt bulunamadı veya iptal edilemedi
+ *       401:
+ *         description: Yetkisiz erişim
+ */
+router.delete('/registrations/:id', auth, cancelRegistrationController);
 
 /**
  * @swagger

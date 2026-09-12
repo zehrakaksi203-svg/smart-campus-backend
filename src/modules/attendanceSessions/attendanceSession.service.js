@@ -8,6 +8,7 @@ const {
     Student,
     Enrollment
   } = require("../../../models");
+const { emitToFaculty } = require("../../socket");
 
 
   const isFromCampusNetwork = (clientIp) => {
@@ -297,7 +298,7 @@ const {
     } else if (velocityFlagReason) {
       flagReason = velocityFlagReason;
     }
-
+    
     const record = await AttendanceRecord.create({
       sessionId,
       studentId: student.id,
@@ -309,6 +310,16 @@ const {
       flagReason
     });
 
+    // Faculty dashboard'a real-time check-in bildirimi
+    emitToFaculty("attendance:checkin", {
+      sessionId,
+      studentId: student.id,
+      studentNumber: student.studentNumber,
+      checkInTime: now,
+      isFlagged,
+      flagReason
+    });
+
     return {
       message: isFlagged
         ? "Yoklama kaydedildi ancak konum şüpheli olarak işaretlendi."
@@ -316,6 +327,7 @@ const {
       record
     };
   };
+     
   
   const getReport = async (sectionId) => {
     const section = await CourseSection.findByPk(sectionId);

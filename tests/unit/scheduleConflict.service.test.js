@@ -5,8 +5,8 @@ jest.mock("../../models", () => ({
       findAll: jest.fn()
     },
     CourseSection: {
-      findByPk: jest.fn()
-    }
+      findOne: jest.fn()
+    },
   }));
   
   const { Enrollment, CourseSection } = require("../../models");
@@ -95,7 +95,7 @@ jest.mock("../../models", () => ({
   
     describe("hasScheduleConflict", () => {
       test("section bulunamazsa 404 fırlatır", async () => {
-        CourseSection.findByPk.mockResolvedValue(null);
+        CourseSection.findOne.mockResolvedValue(null);
   
         await expect(
           hasScheduleConflict(1, 99, "Güz", "2026-2027")
@@ -103,7 +103,7 @@ jest.mock("../../models", () => ({
       });
   
       test("çakışma yoksa hata fırlatmaz", async () => {
-        CourseSection.findByPk.mockResolvedValue({
+        CourseSection.findOne.mockResolvedValue({
           id: 2,
           dayOfWeek: "Salı",
           startTime: "09:00",
@@ -126,7 +126,7 @@ jest.mock("../../models", () => ({
       });
   
       test("çakışma varsa 400 hatası fırlatır", async () => {
-        CourseSection.findByPk.mockResolvedValue({
+        CourseSection.findOne.mockResolvedValue({
           id: 2,
           dayOfWeek: "Pazartesi",
           startTime: "10:00",

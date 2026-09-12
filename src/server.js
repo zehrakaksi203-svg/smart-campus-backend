@@ -1,17 +1,22 @@
 console.log("SERVER:", __filename);
+const http = require("http");
 const app = require("./app");
 const sequelize = require("./config/database");
+const { initSocket } = require("./socket");
 
 const PORT = 3001;
 
-
-
+const httpServer = http.createServer(app);
 
 sequelize
   .authenticate()
   .then(() => {
     console.log("✅ PostgreSQL bağlantısı başarılı.");
-    app.listen(PORT, () => {
+
+    initSocket(httpServer);
+    console.log("🔌 Socket.io başlatıldı.");
+
+    httpServer.listen(PORT, () => {
       console.log(`🚀 Server ${PORT} portunda çalışıyor.`);
       console.log(`📘 Swagger UI: http://localhost:${PORT}/api-docs`);
     });

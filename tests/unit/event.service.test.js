@@ -107,16 +107,18 @@ jest.mock("qrcode", () => ({
           "Bu etkinliğe zaten kayıtlısınız."
         );
       });
-  
-      test("kontenjan dolu ise hata fırlatır", async () => {
+      test("kontenjan dolu ise Waitlisted statüsüyle kayıt oluşturur", async () => {
         Event.findByPk.mockResolvedValue({ id: 1, status: "Scheduled", capacity: 2 });
         EventRegistration.findOne.mockResolvedValue(null);
         EventRegistration.count.mockResolvedValue(2);
-  
-        await expect(registerForEvent({ studentId: 1, eventId: 1 })).rejects.toThrow(
-          "Etkinlik kontenjanı dolu."
+        EventRegistration.create.mockResolvedValue({ id: 5, status: "Waitlisted" });
+
+        const result = await registerForEvent({ studentId: 1, eventId: 1 });
+
+        expect(EventRegistration.create).toHaveBeenCalledWith(
+          expect.objectContaining({ studentId: 1, eventId: 1, status: "Waitlisted" })
         );
-        expect(EventRegistration.create).not.toHaveBeenCalled();
+        expect(result.status).toBe("Waitlisted");
       });
   
       test("kontenjan hesaplaması yalnızca 'Registered' durumundaki kayıtları sayar", async () => {

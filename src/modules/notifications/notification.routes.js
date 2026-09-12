@@ -9,6 +9,7 @@ const {
   getUnreadCount,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
   sendBulkNotification
 } = require("./notification.controller");
 
@@ -23,13 +24,34 @@ const {
  * @swagger
  * /api/v1/notifications:
  *   get:
- *     summary: Giriş yapan kullanıcının bildirimlerini listeler
+ *     summary: Giriş yapan kullanıcının bildirimlerini listeler (sayfalama + filtre)
  *     tags: [Notifications]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *         description: Kategoriye göre filtrele (örn. grade, attendance, event)
+ *       - in: query
+ *         name: isRead
+ *         schema:
+ *           type: boolean
+ *         description: Okunma durumuna göre filtrele
  *     responses:
  *       200:
- *         description: Bildirim listesi
+ *         description: Bildirim listesi (sayfalama bilgisiyle)
  */
 router.get("/", auth, getMyNotifications);
 
@@ -115,5 +137,27 @@ router.put("/:id/read", auth, markAsRead);
  *         description: Sonuç mesajı
  */
 router.put("/read-all", auth, markAllAsRead);
+
+/**
+ * @swagger
+ * /api/v1/notifications/{id}:
+ *   delete:
+ *     summary: Bildirimi siler
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Silme sonucu
+ *       404:
+ *         description: Bildirim bulunamadı
+ */
+router.delete("/:id", auth, deleteNotification);
 
 module.exports = router;

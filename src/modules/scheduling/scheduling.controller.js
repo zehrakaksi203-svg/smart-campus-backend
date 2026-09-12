@@ -1,8 +1,9 @@
 'use strict';
-
 const {
   generateSchedule,
-  getSchedule
+  getSchedule,
+  getMySchedule,
+  exportMyScheduleIcal
 } = require('./scheduling.service');
 
 const generateScheduleController = async (req, res) => {
@@ -52,8 +53,44 @@ const getScheduleController = async (req, res) => {
     });
   }
 };
+const getMyScheduleController = async (req, res) => {
+  try {
+    const sections = await getMySchedule(req.user.id, req.user.role);
+
+    return res.status(200).json({
+      success: true,
+      sections
+    });
+  } catch (error) {
+    console.error('Kişisel program görüntüleme hatası:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const exportMyScheduleIcalController = async (req, res) => {
+  try {
+    const icsContent = await exportMyScheduleIcal(req.user.id, req.user.role);
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="my-schedule.ics"');
+    return res.status(200).send(icsContent);
+  } catch (error) {
+    console.error('iCal export hatası:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 
 module.exports = {
   generateScheduleController,
-  getScheduleController
+  getScheduleController,
+  getMyScheduleController,
+  exportMyScheduleIcalController
 };

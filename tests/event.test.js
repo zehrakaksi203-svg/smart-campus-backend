@@ -199,12 +199,11 @@ describe("Event Flow (integration)", () => {
     const secondRes = await makeStudentAndRegister("event.capacity2@example.com", 2);
     expect(secondRes.statusCode).toBe(201);
 
-    // üçüncü öğrenci -> kontenjan dolu, reddedilmeli
-    const thirdRes = await makeStudentAndRegister("event.capacity3@example.com", 3);
-    expect(thirdRes.statusCode).toBe(400);
-    expect(thirdRes.body.message).toMatch(/kontenjanı dolu/);
-  });
-
+     // üçüncü öğrenci -> kontenjan dolu, Waitlisted statüsüyle kaydolmalı
+     const thirdRes = await makeStudentAndRegister("event.capacity3@example.com", 3);
+     expect(thirdRes.statusCode).toBe(201);
+     expect(thirdRes.body.registration.status).toBe("Waitlisted");
+   });
   test("GET /api/v1/events/my-registrations - öğrenci sadece kendi kayıtlarını görür", async () => {
     const res = await request(app)
       .get("/api/v1/events/my-registrations")

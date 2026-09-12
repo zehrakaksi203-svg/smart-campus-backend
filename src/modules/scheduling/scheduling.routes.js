@@ -8,7 +8,9 @@ const router = express.Router();
 
 const {
   generateScheduleController,
-  getScheduleController
+  getScheduleController,
+  getMyScheduleController,
+  exportMyScheduleIcalController
 } = require('./scheduling.controller');
 
 /**
@@ -72,5 +74,32 @@ router.post('/generate', auth, role('Admin'), generateScheduleController);
  *         description: Yetkisiz erişim
  */
 router.get('/', auth, getScheduleController);
+/**
+ * @swagger
+ * /api/v1/scheduling/my-schedule:
+ *   get:
+ *     summary: Giriş yapan kullanıcının (öğrenci/öğretim üyesi) kişisel haftalık programı
+ *     tags: [Scheduling]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Kişisel program
+ */
+router.get('/my-schedule', auth, getMyScheduleController);
+
+/**
+ * @swagger
+ * /api/v1/scheduling/my-schedule/ical:
+ *   get:
+ *     summary: Kişisel programı .ics (iCalendar) dosyası olarak indir
+ *     tags: [Scheduling]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: .ics dosyası
+ */
+router.get('/my-schedule/ical', auth, exportMyScheduleIcalController);
 
 module.exports = router;

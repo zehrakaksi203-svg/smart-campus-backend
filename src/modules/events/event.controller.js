@@ -1,13 +1,17 @@
 'use strict';
+
 const { Student, Faculty } = require('../../../models');
+
 const {
   createEvent,
   getAllEvents,
   getEventById,
   registerForEvent,
+  cancelRegistration,
   getMyRegistrations,
   generateRegistrationQr,
-  validateRegistrationQr
+  validateRegistrationQr,
+  generateEventICal
 } = require('./event.service');
 
 const createEventController = async (req, res) => {
@@ -24,25 +28,41 @@ const createEventController = async (req, res) => {
     if (!title || !eventDate || !location || capacity === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'title, eventDate, location ve capacity alanları zorunludur.'
+        message:
+          'title, eventDate, location ve capacity alanları zorunludur.'
       });
     }
+
+    if (Number.isNaN(Number(capacity)) || Number(capacity) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'capacity pozitif bir sayı olmalıdır.'
+      });
+    }
+
     let organizerId = null;
 
+    // Öğretim üyesi etkinlik oluşturabilir
     if (req.user.role === 'Faculty') {
       const faculty = await Faculty.findOne({
-        where: { userId: req.user.id }
+        where: {
+          userId: req.user.id
+        }
       });
 
       if (!faculty) {
         return res.status(400).json({
           success: false,
-          message: 'Giriş yapan kullanıcıya ait öğretim üyesi kaydı bulunamadı.'
+          message:
+            'Giriş yapan kullanıcıya ait öğretim üyesi kaydı bulunamadı.'
         });
       }
 
       organizerId = faculty.id;
-    } else if (req.user.role !== 'Admin') {
+    }
+
+    // Admin de etkinlik oluşturabilir
+    else if (req.user.role !== 'Admin') {
       return res.status(403).json({
         success: false,
         message: 'Etkinlik oluşturma yetkiniz yok.'
@@ -54,11 +74,10 @@ const createEventController = async (req, res) => {
       description,
       eventDate,
       location,
-      capacity,
+      capacity: Number(capacity),
       organizerId,
       status
     });
-   
 
     return res.status(201).json({
       success: true,
@@ -125,13 +144,16 @@ const registerForEventController = async (req, res) => {
     }
 
     const student = await Student.findOne({
-      where: { userId: req.user.id }
+      where: {
+        userId: req.user.id
+      }
     });
 
     if (!student) {
       return res.status(400).json({
         success: false,
-        message: 'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
+        message:
+          'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
       });
     }
 
@@ -140,9 +162,14 @@ const registerForEventController = async (req, res) => {
       eventId
     });
 
+    const message =
+      registration.status === 'Waitlisted'
+        ? 'Etkinlik kontenjanı dolu olduğu için bekleme listesine eklendiniz.'
+        : 'Etkinliğe kayıt oluşturuldu.';
+
     return res.status(201).json({
       success: true,
-      message: 'Etkinliğe kayıt oluşturuldu.',
+      message,
       registration
     });
   } catch (error) {
@@ -155,16 +182,57 @@ const registerForEventController = async (req, res) => {
   }
 };
 
-const getMyRegistrationsController = async (req, res) => {
+const cancelRegistrationController = async (req, res) => {
   try {
+    const { id } = req.params;
+
     const student = await Student.findOne({
-      where: { userId: req.user.id }
+      where: {
+        userId: req.user.id
+      }
     });
 
     if (!student) {
       return res.status(400).json({
         success: false,
-        message: 'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
+        message:
+          'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
+      });
+    }
+
+    const result = await cancelRegistration(id, student.id);
+
+    return res.status(200).json({
+      success: true,
+      message: result.promoted
+        ? 'Kayıt iptal edildi. Bekleme listesindeki bir öğrenci otomatik olarak kayıtlı duruma alındı.'
+        : 'Kayıt iptal edildi.',
+      registration: result.registration,
+      promoted: result.promoted
+    });
+  } catch (error) {
+    console.error('Etkinlik kaydı iptal hatası:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const getMyRegistrationsController = async (req, res) => {
+  try {
+    const student = await Student.findOne({
+      where: {
+        userId: req.user.id
+      }
+    });
+
+    if (!student) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
       });
     }
 
@@ -189,17 +257,23 @@ const generateQr = async (req, res) => {
     const { id } = req.params;
 
     const student = await Student.findOne({
-      where: { userId: req.user.id }
+      where: {
+        userId: req.user.id
+      }
     });
 
     if (!student) {
       return res.status(400).json({
         success: false,
-        message: 'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
+        message:
+          'Giriş yapan kullanıcıya ait öğrenci kaydı bulunamadı.'
       });
     }
 
-    const result = await generateRegistrationQr(id, student.id);
+    const result = await generateRegistrationQr(
+      id,
+      student.id
+    );
 
     return res.status(200).json({
       success: true,
@@ -244,12 +318,37 @@ const validateQr = async (req, res) => {
   }
 };
 
+const exportEventICalController = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const icsContent = await generateEventICal(id);
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="event-${id}.ics"`
+    );
+
+    return res.status(200).send(icsContent);
+  } catch (error) {
+    console.error('iCal dışa aktarma hatası:', error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   createEventController,
   getAllEventsController,
   getEventByIdController,
   registerForEventController,
+  cancelRegistrationController,
   getMyRegistrationsController,
   generateQr,
-  validateQr
+  validateQr,
+  exportEventICalController
 };
