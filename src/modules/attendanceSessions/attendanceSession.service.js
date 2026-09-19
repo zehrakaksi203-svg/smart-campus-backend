@@ -363,6 +363,43 @@ const { emitToFaculty } = require("../../socket");
       flaggedRecords
     };
   };
+  const getSessionsForStudent = async (userId) => {
+    const student = await getStudentByUserId(userId);
+
+    const enrollments = await Enrollment.findAll({
+      where: { studentId: student.id },
+      attributes: ["sectionId"]
+    });
+
+    const sectionIds = enrollments.map((e) => e.sectionId).filter(Boolean);
+
+    if (sectionIds.length === 0) {
+      return [];
+    }
+
+    const sessions = await AttendanceSession.findAll({
+      where: { sectionId: sectionIds },
+      include: [
+        {
+          model: CourseSection,
+          as: "section",
+          include: [{ association: "course" }]
+        }
+      ],
+      order: [["date", "DESC"]]
+    });
+
+    return sessions.map((s) => ({
+      id: s.id,
+      date: s.date,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      status: s.status,
+      courseCode: s.section?.course?.courseCode || null,
+      courseName: s.section?.course?.courseName || null,
+      sectionCode: s.section?.sectionCode || null
+    }));
+  };
   
   const getMyAttendance = async (userId) => {
     const student = await getStudentByUserId(userId);
@@ -429,6 +466,7 @@ const { emitToFaculty } = require("../../socket");
     getSessionById,
     closeSession,
     getMySessions,
+    getSessionsForStudent,
     checkIn,
     checkInWithQr,
     refreshQrCode,

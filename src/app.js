@@ -90,7 +90,9 @@ console.log(
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (process.env.CORS_ORIGINS || "http://localhost:5173")
+      .split(",")
+      .map((origin) => origin.trim()),
     credentials: true,
   })
 );
@@ -156,8 +158,6 @@ startAbsenceWarningJob();
 startEventReminderJob();
 startMealReminderJob();
 
-// Cron Job'ı başlat
-startAbsenceWarningJob();
 app.use("/api/v1/auth", authLimiter, authRoutes);
 
 app.use("/api/v1/users", userRoutes);

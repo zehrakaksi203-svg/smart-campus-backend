@@ -100,6 +100,51 @@ function backtrack(sections, index, classrooms, slots, assignment, facultyBusy, 
 
   return null;
 }
+async function generateSchedule(semester, departmentId) {
+  const where = { semester, isActive: true };
+
+  const include = [];
+  if (departmentId) {
+    include.push({
+      model: Course,
+      as: 'course',
+      where: { departmentId },
+      attributes: []
+    });
+  }
+
+  const sections = await CourseSection.findAll({
+    where,
+    include,
+    order: [['capacity', 'DESC']]
+  });
+
+  if (sections.length === 0) {
+    throw new Error('Bu dönem/bölüm için ders şubesi bulunamadı.');
+  }
+
+  // ... (geri kalanı aynı)
+}
+async function getSchedule(semester, departmentId) {
+  const where = semester ? { semester, isActive: true } : { isActive: true };
+
+  const courseInclude = { model: Course, as: 'course' };
+  if (departmentId) {
+    courseInclude.where = { departmentId };
+  }
+
+  const sections = await CourseSection.findAll({
+    where,
+    include: [
+      courseInclude,
+      { model: Faculty, as: 'faculty' }
+    ],
+    order: [['dayOfWeek', 'ASC'], ['startTime', 'ASC']]
+  });
+
+  return sections;
+}
+
 
 async function generateSchedule(semester) {
   const sections = await CourseSection.findAll({

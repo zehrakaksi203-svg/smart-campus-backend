@@ -7,6 +7,7 @@ const {
   getSessionById,
   closeSession,
   getMySessions,
+  getSessionsForStudent,
   checkIn,
   checkInWithQr,
   refreshQrCode,
@@ -90,6 +91,22 @@ router.post("/sessions", auth, createSession);
  *         description: Öğretim üyesi kaydı bulunamadı
  */
 router.get("/sessions/my-sessions", auth, getMySessions);
+
+/**
+ * @swagger
+ * /api/v1/attendance/sessions/my-available-sessions:
+ *   get:
+ *     summary: Giriş yapan öğrencinin kayıtlı olduğu derslerin yoklama oturumları
+ *     tags: [AttendanceSessions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Ders adı ve tarih bilgisiyle oturum listesi
+ *       403:
+ *         description: Öğrenci kaydı bulunamadı
+ */
+router.get("/sessions/my-available-sessions", auth, getSessionsForStudent);
 
 /**
  * @swagger

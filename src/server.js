@@ -4,7 +4,7 @@ const app = require("./app");
 const sequelize = require("./config/database");
 const { initSocket } = require("./socket");
 
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 const httpServer = http.createServer(app);
 

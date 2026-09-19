@@ -24,12 +24,12 @@ module.exports = (sequelize, DataTypes) => {
     {
       facultyId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
       },
 
       departmentId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
       },
 
       title: {

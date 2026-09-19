@@ -6,3 +6,6 @@ npm-debug.log
 .gitignore
 tests
 *.md
+logs
+coverage
+src/logs

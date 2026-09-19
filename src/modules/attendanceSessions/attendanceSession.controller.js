@@ -91,6 +91,14 @@ const getReport = async (req, res) => {
     handleError(res, error);
   }
 };
+const getSessionsForStudent = async (req, res) => {
+  try {
+    const sessions = await attendanceSessionService.getSessionsForStudent(req.user.id);
+    res.status(200).json(sessions);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
 
 const getMyAttendance = async (req, res) => {
   try {
@@ -100,12 +108,12 @@ const getMyAttendance = async (req, res) => {
     handleError(res, error);
   }
 };
-
 module.exports = {
   createSession,
   getSessionById,
   closeSession,
   getMySessions,
+  getSessionsForStudent,
   checkIn,
   checkInWithQr,
   refreshQrCode,

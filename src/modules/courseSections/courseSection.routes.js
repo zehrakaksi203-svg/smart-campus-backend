@@ -38,7 +38,7 @@ const router = express.Router();
 router.post(
   "/",
   auth,
-  role("Admin"),
+  role("Admin", "Faculty"),
   validate(courseSectionSchema),
   createCourseSection
 );

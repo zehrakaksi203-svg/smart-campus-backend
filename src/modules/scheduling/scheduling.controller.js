@@ -8,7 +8,7 @@ const {
 
 const generateScheduleController = async (req, res) => {
   try {
-    const { semester } = req.body;
+    const { semester, departmentId } = req.body;
 
     if (!semester) {
       return res.status(400).json({
@@ -17,7 +17,7 @@ const generateScheduleController = async (req, res) => {
       });
     }
 
-    const result = await generateSchedule(semester);
+    const result = await generateSchedule(semester, departmentId);
 
     return res.status(200).json({
       success: true,
@@ -36,9 +36,9 @@ const generateScheduleController = async (req, res) => {
 
 const getScheduleController = async (req, res) => {
   try {
-    const { semester } = req.query;
+    const { semester, departmentId } = req.query;
 
-    const sections = await getSchedule(semester);
+    const sections = await getSchedule(semester, departmentId);
 
     return res.status(200).json({
       success: true,
@@ -53,6 +53,7 @@ const getScheduleController = async (req, res) => {
     });
   }
 };
+
 const getMyScheduleController = async (req, res) => {
   try {
     const sections = await getMySchedule(req.user.id, req.user.role);
